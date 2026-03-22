@@ -354,6 +354,7 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
+  Platform,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -382,19 +383,28 @@ export default function App() {
     setTimeout(() => setIsRegister(goReg), 350);
   };
 
+  // ✅ El perspective va SOLO en el contenedor, no en las caras
+  const sceneStyle = useAnimatedStyle(() => ({
+    transform: [{ perspective: 1200 }],
+  }));
+
   const frontStyle = useAnimatedStyle(() => {
     const rotateY = interpolate(rotation.value, [0, 180], [0, 180]);
     return {
-      transform: [{ perspective: 1200 }, { rotateY: `${rotateY}deg` }],
+      transform: [{ rotateY: `${rotateY}deg` }],
+      // ✅ En iOS usar 'hidden', en Android 'hidden' también pero
+      //    aseguramos que el zIndex cambie para no solaparse
       backfaceVisibility: "hidden",
+      zIndex: rotation.value < 90 ? 1 : 0,
     };
   });
 
   const backStyle = useAnimatedStyle(() => {
     const rotateY = interpolate(rotation.value, [0, 180], [180, 360]);
     return {
-      transform: [{ perspective: 1200 }, { rotateY: `${rotateY}deg` }],
+      transform: [{ rotateY: `${rotateY}deg` }],
       backfaceVisibility: "hidden",
+      zIndex: rotation.value >= 90 ? 1 : 0,
     };
   });
 
@@ -403,8 +413,9 @@ export default function App() {
       <StatusBar barStyle="light-content" />
       <Text style={styles.title}>Login | Signup Animation</Text>
 
-      <View style={styles.scene}>
-        {/* CARA FRONTAL — LOGIN (gradiente naranja original) */}
+      {/* ✅ Animated.View externo lleva el perspective en iOS */}
+      <Animated.View style={[styles.scene, sceneStyle]}>
+        {/* CARA FRONTAL — LOGIN */}
         <Animated.View style={[styles.card, frontStyle]}>
           <LinearGradient
             colors={["#1a1a1a", "#ff6b4a"]}
@@ -462,7 +473,7 @@ export default function App() {
           </View>
         </Animated.View>
 
-        {/* CARA TRASERA — REGISTER (gradiente violeta original) */}
+        {/* CARA TRASERA — REGISTER */}
         <Animated.View style={[styles.card, backStyle]}>
           <LinearGradient
             colors={["#1a1a1a", "#6b4aff"]}
@@ -534,7 +545,7 @@ export default function App() {
             </TouchableOpacity>
           </View>
         </Animated.View>
-      </View>
+      </Animated.View>
     </View>
   );
 }
